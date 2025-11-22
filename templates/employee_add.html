@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Employee</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .form-container { 
+            max-width: 600px; 
+            background: #f9f9f9; 
+            padding: 30px; 
+            border-radius: 5px; 
+            border: 1px solid #ddd;
+        }
+        .form-group { margin-bottom: 20px; }
+        .cancel-btn { background-color: black; color: white; margin-left: 10px; }
+        .error { color: red; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Add New Employee</h1>
+    
+    <nav>
+        <a href="/">Home</a> | 
+        <a href="/projects">Projects Portfolio</a> |
+        <a href="/managers">Managers Overview</a> |
+        <a href="/logout">Logout</a>
+    </nav>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <div>
+        <form method="POST">
+            <div class="form-group">
+                <label for="ssn">SSN (9 digits): (req*)</label>
+                <input type="text" id="ssn" name="ssn" required 
+                       pattern="\d{9}" maxlength="9"
+                       placeholder="123456789">
+            </div>
+
+            <div class="form-group">
+                <label for="fname">First Name: (req*)</label>
+                <input type="text" id="fname" name="fname" required maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="minit">Middle Initial:</label>
+                <input type="text" id="minit" name="minit" maxlength="1">
+            </div>
+
+            <div class="form-group">
+                <label for="lname">Last Name: (req*)</label>
+                <input type="text" id="lname" name="lname" required maxlength="30">
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address: (req*)</label>
+                <input type="text" id="address" name="address" required maxlength="50">
+            </div>
+
+            <div class="form-group">
+                <label for="sex">Sex: (req*)</label>
+                <select id="sex" name="sex" required>
+                    <option value="">Select...</option>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="salary">Salary: (req*)</label>
+                <input type="number" id="salary" name="salary" required min="0">
+            </div>
+
+            <div class="form-group">
+                <label for="super_ssn">Supervisor:</label>
+                <select id="super_ssn" name="super_ssn">
+                    <option value="">None</option>
+                    {% for sup in supervisors %}
+                    <option value="{{ sup[0] }}">{{ sup[1] }} {{ sup[2] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dno">Department: (req*)</label>
+                <select id="dno" name="dno" required>
+                    <option value="">Select Department...</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept[0] }}">{{ dept[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="bdate">Birth Date:</label>
+                <input type="date" id="bdate" name="bdate">
+            </div>
+
+            <div class="form-group">
+                <label for="empdate">Employment Date:</label>
+                <input type="date" id="empdate" name="empdate">
+            </div>
+
+            <button type="submit">Add Employee</button>
+            <button type="button" class="cancel-btn" onclick="window.location.href='/'">Cancel</button>
+        </form>
+    </div>
+</body>
+</html>

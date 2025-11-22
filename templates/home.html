@@ -9,6 +9,7 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         .filters { background: #f9f9f9; padding: 15px; border-radius: 5px; }
+        .add-employee-btn { background-color: #105e12; color: white; padding: 15px 30px; margin-top: 20px 0; }
     </style>
 </head>
 <body>
@@ -22,6 +23,7 @@
         <a href="/logout">Logout</a>
     </nav>
     <br>
+
 
     <!-- filter section: form to search and filter the employee list -->
     <div class="filters">
@@ -61,7 +63,11 @@
             <input type="hidden" name="sort_by" value="{{ current_sort }}">
             <input type="hidden" name="order" value="{{ current_order }}">
         </form>
-    </div>
+    </div><br>
+
+    <div>
+        <a href="{{ url_for('create_employee') }}", class="add-employee-btn">Add New Employee</a>
+    </div><br>
 
     <!-- data table -->
     <table>
@@ -88,7 +94,11 @@
             <!-- loop: iterates through every employee found in the db -->
             {% for emp in employees %}
             <tr>
-                <td>{{ emp[0] }} {{ emp[1] }}</td> <!-- fname-lname -->
+                <td>
+                    <a href="{{ url_for('edit_employee', ssn=emp[6]) }}">
+                        {{ emp[0] }} {{ emp[1] }} <!-- fname-lname -->
+                    </a>
+                </td>
                 <td>{{ emp[2] }}</td> <!-- dname -->
                 <td>{{ emp[3] }}</td> <!-- dependents -->
                 <td>{{ emp[4] }}</td> <!-- projects -->

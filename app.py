@@ -109,7 +109,8 @@ def index():
             e.Fname, e.Lname, d.Dname, 
             COALESCE(dep.dep_count, 0) as num_dependents,
             COALESCE(wo.proj_count, 0) as num_projects,
-            COALESCE(wo.total_hours, 0) as total_hours
+            COALESCE(wo.total_hours, 0) as total_hours,
+            e.Ssn
         FROM Employee e
         JOIN Department d ON e.Dno = d.Dnumber
         LEFT JOIN (
@@ -418,6 +419,164 @@ def format_employee_name(fname, minit, lname):
         return f"{fname} {minit}. {lname}"
     else:
         return f"{fname} {lname}"
+
+@app.route("/employee/edit/<ssn>", methods=["GET", "POST"])
+def edit_employee(ssn):
+    if not login_required():
+        return redirect("/login")
+    
+    conn = database.get_database()
+    cur = conn.cursor()
+    
+    if request.method == "GET":
+        cur.execute("""
+            SELECT Ssn, Fname, Minit, Lname, BDate, Address, Sex, Salary, Super_ssn, Dno
+            FROM Employee
+            WHERE Ssn = %s
+        """, (ssn,))
+
+        employee = cur.fetchone()
+        
+        if not employee:
+            return redirect("/")
+        
+        cur.execute("SELECT Dnumber, Dname FROM Department ORDER BY Dname")
+        departments = cur.fetchall()
+        
+        return render_template("employee_edit.html", employee=employee, departments=departments, error=None, success=None)
+    
+    # POST - Update employee (only Address, Salary, Dno as per requirements)
+    try:
+        address = request.form["address"].strip()
+        salary = request.form["salary"]
+        dno = request.form["dno"]
+        
+        cur.execute("""
+            UPDATE Employee
+            SET Address = %s, Salary = %s, Dno = %s
+            WHERE Ssn = %s
+        """, (address, salary, dno, ssn))
+        
+        conn.commit()
+        return redirect("/")
+        
+    except Exception as e:
+        conn.rollback()
+        error_msg = str(e).lower()
+        
+        if "foreign key" in error_msg:
+            error = "Error: Invalid department selected."
+        else:
+            error = "An error occurred while updating the employee."
+        
+        cur.execute("SELECT Ssn, Fname, Minit, Lname, BDate, Address, Sex, Salary, Super_ssn, Dno FROM Employee WHERE Ssn = %s", (ssn,))
+        employee = cur.fetchone()
+        cur.execute("SELECT Dnumber, Dname FROM Department ORDER BY Dname")
+        departments = cur.fetchall()
+        
+        return render_template("employee_edit.html", employee=employee, departments=departments, error=error, success=None)
+
+
+@app.route("/employee/delete/<ssn>", methods=["POST"])
+def delete_employee(ssn):
+    if not login_required():
+        return redirect("/login")
+    
+    conn = database.get_database()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("DELETE FROM Employee WHERE Ssn = %s", (ssn,))
+        conn.commit()
+        return redirect("/")
+        
+    except Exception as e:
+        conn.rollback()
+        error_msg = str(e).lower()
+        
+        # Find error
+        if "foreign key" in error_msg or "violates" in error_msg or "restrict" in error_msg:
+            # Get employee name
+            cur.execute("SELECT Fname, Lname FROM Employee WHERE Ssn = %s", (ssn,))
+            emp = cur.fetchone()
+            if emp is not None:
+                name = f"{emp[0]} {emp[1]}"
+            else:
+                emp = "This employee"
+            
+            error = f"Cannot delete {name}: They are still assigned to projects, have dependents listed, or are a manager/supervisor. Please remove these associations first."
+        else:
+            error = "An unexpected error occurred while deleting the employee."
+        
+        # Show error
+        cur.execute("SELECT Ssn, Fname, Minit, Lname, BDate, Address, Sex, Salary, Super_ssn, Dno FROM Employee WHERE Ssn = %s", (ssn,))
+        employee = cur.fetchone()
+        cur.execute("SELECT Dnumber, Dname FROM Department ORDER BY Dname")
+        departments = cur.fetchall()
+        
+        return render_template("employee_edit.html", employee=employee, departments=departments, error=error, success=None)
+
+@app.route("/employee/add", methods=["GET", "POST"])
+def create_employee():
+    if not login_required():
+        return redirect("/login")
+    
+    conn = database.get_database()
+    cur = conn.cursor()
+    
+    if request.method == "GET":
+        # Get departments
+        cur.execute("SELECT Dnumber, Dname FROM Department ORDER BY Dname")
+        departments = cur.fetchall()
+        
+        # Get supervisors
+        cur.execute("SELECT Ssn, Fname, Lname FROM Employee ORDER BY Lname, Fname")
+        supervisors = cur.fetchall()
+        
+        return render_template("employee_add.html", departments=departments, supervisors=supervisors, error=None)
+    
+    # Create employee
+    try:
+        ssn = request.form["ssn"].strip()
+        fname = request.form["fname"].strip()
+        minit = request.form.get("minit", "").strip() or " "
+        lname = request.form["lname"].strip()
+        bdate = request.form.get("bdate") or None
+        address = request.form["address"].strip()
+        sex = request.form["sex"]
+        salary = request.form["salary"]
+        super_ssn = request.form.get("super_ssn") or None
+        dno = request.form["dno"]
+        empdate = request.form.get("empdate") or None
+        
+        cur.execute("""
+            INSERT INTO Employee (Ssn, Fname, Minit, Lname, BDate, Address, Sex, Salary, Super_ssn, Dno, EmpDate)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (ssn, fname, minit, lname, bdate, address, sex, salary, super_ssn, dno, empdate))
+        
+        conn.commit()
+        return redirect("/")
+        
+    except Exception as e:
+        conn.rollback()
+        error_msg = str(e).lower()
+        
+        # Find and handle specific errors
+        if "unique" in error_msg or "duplicate" in error_msg:
+            error = f"Error: SSN {ssn} already exists"
+        elif "foreign key" in error_msg:
+            error = "Error: Invalid department or supervisor selected"
+        elif "check" in error_msg:
+            error = "Error: Invalid sex value"
+        else:
+            error = "An error occurred while adding the employee"
+        
+        cur.execute("SELECT Dnumber, Dname FROM Department ORDER BY Dname")
+        departments = cur.fetchall()
+        cur.execute("SELECT Ssn, Fname, Lname FROM Employee ORDER BY Lname, Fname")
+        supervisors = cur.fetchall()
+        
+        return render_template("employee_add.html", departments=departments, supervisors=supervisors, error=error)
 
 if __name__ == "__main__":
     app.run(debug=True)
