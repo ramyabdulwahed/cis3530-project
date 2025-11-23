@@ -14,3 +14,24 @@ VALUES (
     'admin'
 );
 
+INSERT INTO app_user (username, password_hash, role)
+VALUES (
+    'viewer1',
+    'scrypt:32768:8:1$3qGXS69FsEu4zAjC$f76d3be3aa6a6c148aae01a1bb56afbb18c53c646bb52a846c5ec5fb1c264e9ca5124b86acf3b426c47355f2ef68fc3e2bbee0a17bc08ca8ee00dd766f2af70c',
+    'viewer'
+);
+
+/*I inserted also a viewer user with the following credentials
+username: viewer1
+password: viewer123
+*/
+
+CREATE INDEX IF NOT EXISTS idx_employee_name 
+    ON Employee (Lname, Fname);
+
+CREATE INDEX IF NOT EXISTS idx_workson_pno 
+    ON Works_On (Pno);
+
+
+
+

@@ -65,9 +65,11 @@
         </form>
     </div><br>
 
-    <div>
-        <a href="{{ url_for('create_employee') }}", class="add-employee-btn">Add New Employee</a>
-    </div><br>
+    {% if session["role"] == "admin" %}
+        <div>
+            <a href="{{ url_for('create_employee') }}", class="add-employee-btn">Add New Employee</a>
+        </div><br>
+    {% endif %}
 
     <!-- data table -->
     <table>
@@ -95,9 +97,14 @@
             {% for emp in employees %}
             <tr>
                 <td>
-                    <a href="{{ url_for('edit_employee', ssn=emp[6]) }}">
-                        {{ emp[0] }} {{ emp[1] }} <!-- fname-lname -->
-                    </a>
+                    {% if session["role"] == "admin" %}
+
+                        <a href="{{ url_for('edit_employee', ssn=emp[6]) }}">
+                            {{ emp[0] }} {{ emp[1] }} <!-- fname-lname -->
+                        </a>
+                    {% else %}
+                            {{ emp[0] }} {{ emp[1] }}
+                    {% endif %}
                 </td>
                 <td>{{ emp[2] }}</td> <!-- dname -->
                 <td>{{ emp[3] }}</td> <!-- dependents -->

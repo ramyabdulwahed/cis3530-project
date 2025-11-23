@@ -17,6 +17,13 @@
     </style>
 </head>
 <body>
+
+    {% if session["role"] != "admin" %}
+        <h2 style="color:red;">Access Denied — Admins Only</h2>
+        <p>You do not have permission to add employees.</p>
+        <a href="/">Return to Home</a>
+    {% endif %}
+
     <h1>Add New Employee</h1>
     
     <nav>

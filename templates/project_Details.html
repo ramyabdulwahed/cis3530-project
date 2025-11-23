@@ -49,6 +49,7 @@
         </div>
 
         <!-- part 2: upsert form (right side) -->
+        {% if session["role"] == "admin" %}
         <div style="flex: 1;">
             <div class="form-box">
                 <h2>Assign / Add Hours</h2>
@@ -77,6 +78,7 @@
                 
             </div>
         </div>
+        {% endif %}
     </div>
 </body>
 </html>

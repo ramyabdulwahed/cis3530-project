@@ -5,6 +5,7 @@ import os
 import csv
 import io
 import database
+from functools import wraps
 
 ## flask = web framework 
 # render_template = Loads HTML files. 
@@ -28,6 +29,17 @@ def get_database():
     #os.environ["DATABASE_URL"] = connection string to the database. think of it as address of lib
     return psycopg.connect(conninfo=os.environ["DATABASE_URL"])
 
+#function to check if the user is admin
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect("/login")
+        if session.get("role") != "admin":
+            return "Access Denied (Admin Only)", 403
+        return f(*args, **kwargs)
+    return wrapper
+
 
 def login_required():
     if "user_id" not in session:
@@ -45,19 +57,20 @@ def login():
 
         with get_database() as conn:
             with conn.cursor() as cur: #cur is a cursor/worker to execute queries
-                cur.execute ('SELECT id, password_hash FROM app_user WHERE username = %s', (username,))
+                cur.execute ('SELECT id, password_hash, role FROM app_user WHERE username = %s', (username,))
                 user = cur.fetchone()
 
         if user is None:
             return "Invalid username or password"
     
-        user_id, password_hash = user
+        user_id, password_hash,role = user
 
         if not check_password_hash(password_hash, password):
             return "Invalid username or password"
 
         session["user_id"] = user_id
         session["username"] = username
+        session["role"] = role
         #how we remeber who the user is in between page loads
 
         return redirect(url_for('index'))
@@ -247,6 +260,7 @@ def project_details(pno):
 
 # A4: upsert Logic
 @app.route("/project/<int:pno>/assign", methods=["POST"])
+@admin_required
 def assign_hours(pno):
     if not login_required():
         return redirect(url_for('login'))
@@ -421,6 +435,7 @@ def format_employee_name(fname, minit, lname):
         return f"{fname} {lname}"
 
 @app.route("/employee/edit/<ssn>", methods=["GET", "POST"])
+@admin_required
 def edit_employee(ssn):
     if not login_required():
         return redirect("/login")
@@ -478,6 +493,7 @@ def edit_employee(ssn):
 
 
 @app.route("/employee/delete/<ssn>", methods=["POST"])
+@admin_required
 def delete_employee(ssn):
     if not login_required():
         return redirect("/login")
@@ -517,6 +533,7 @@ def delete_employee(ssn):
         return render_template("employee_edit.html", employee=employee, departments=departments, error=error, success=None)
 
 @app.route("/employee/add", methods=["GET", "POST"])
+@admin_required
 def create_employee():
     if not login_required():
         return redirect("/login")
