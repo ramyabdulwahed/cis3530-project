@@ -7,7 +7,7 @@
 3. $env:DATABASE_URL="postgresql://postgres:postgres@localhost:5432/company_portal_db"
 
 
-# CIS*3530 Company Portal – Team Project
+# Company Portal – Team Project
 
 This project is a Flask + PostgreSQL web application implementing:
 - Employee Overview
